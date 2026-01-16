@@ -1,0 +1,100 @@
+{
+  "name": "smart-pilot",
+  "version": "1.0.0",
+  "description": "Smart Pilot - Intelligent Windows companion app",
+  "main": "./dist/main/index.js",
+  "author": {
+    "name": "Insurance Data",
+    "email": "support@insurancedata.com"
+  },
+  "license": "PROPRIETARY",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:main\"",
+    "dev:renderer": "vite",
+    "dev:main": "tsc -p tsconfig.main.json && electron --inspect=5858 .",
+    "prebuild": "node scripts/generate-version.js",
+    "build": "npm run build:renderer && npm run build:main",
+    "build:renderer": "vite build",
+    "build:main": "tsc -p tsconfig.main.json",
+    "prebuild:win": "node scripts/generate-version.js",
+    "build:win": "npm run build && electron-builder --win --x64",
+    "prepackage": "node scripts/generate-version.js",
+    "package": "npm run build && electron-builder --win --x64 --publish never",
+    "prepackage:portable": "node scripts/generate-version.js",
+    "package:portable": "npm run build && electron-builder --win portable",
+    "lint": "eslint src --ext .ts,.tsx",
+    "type-check": "tsc --noEmit && tsc -p tsconfig.main.json --noEmit",
+    "version:generate": "node scripts/generate-version.js"
+  },
+  "dependencies": {
+    "@fluentui/react-components": "^9.47.0",
+    "@fluentui/react-icons": "^2.0.228",
+    "axios": "^1.6.7",
+    "electron-log": "^5.0.1",
+    "electron-store": "^8.1.0",
+    "electron-window-state": "^5.0.3",
+    "framer-motion": "^11.0.5",
+    "node-machine-id": "^1.1.12",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-window": "^1.8.10",
+    "ws": "^8.16.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "@types/ws": "^8.5.10",
+    "@typescript-eslint/eslint-plugin": "^6.19.1",
+    "@typescript-eslint/parser": "^6.19.1",
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.2",
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12"
+  },
+  "build": {
+    "appId": "com.insurancedata.smartpilot",
+    "productName": "Smart Pilot",
+    "files": [
+      "dist/**/*",
+      "package.json",
+      "version.json"
+    ],
+    "directories": {
+      "buildResources": "assets",
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icons/icon.ico",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Smart Pilot"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    }
+  }
+}

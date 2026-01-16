@@ -1,0 +1,203 @@
+/**
+ * Framer Motion Animation Configurations
+ * Consistent animation timing and easing
+ */
+
+/* Animation Timing Variables */
+:root {
+  --animation-fast: 0.2s;
+  --animation-base: 0.3s;
+  --animation-slow: 0.5s;
+  --easing-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Fade animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Slide animations */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Scale animations */
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleOut {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+}
+
+/* Pulse animation for attention */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* Glow animation for handle */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(236, 103, 38, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(236, 103, 38, 0.6);
+  }
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Utility animation classes */
+.animate-fade-in {
+  animation: fadeIn var(--animation-base) var(--easing-smooth);
+}
+
+.animate-fade-out {
+  animation: fadeOut var(--animation-base) var(--easing-smooth);
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft var(--animation-base) var(--easing-smooth);
+}
+
+.animate-slide-in-right {
+  animation: slideInRight var(--animation-base) var(--easing-smooth);
+}
+
+.animate-slide-in-up {
+  animation: slideInUp var(--animation-base) var(--easing-smooth);
+}
+
+.animate-scale-in {
+  animation: scaleIn var(--animation-base) var(--easing-smooth);
+}
+
+.animate-scale-out {
+  animation: scaleOut var(--animation-base) var(--easing-smooth);
+}
+
+.animate-pulse {
+  animation: pulse 2s var(--easing-smooth) infinite;
+}
+
+.animate-glow {
+  animation: glow 2s var(--easing-smooth) infinite;
+}
+
+/* Transition utilities */
+.transition-fast {
+  transition: all var(--animation-fast) var(--easing-smooth);
+}
+
+.transition-base {
+  transition: all var(--animation-base) var(--easing-smooth);
+}
+
+.transition-slow {
+  transition: all var(--animation-slow) var(--easing-smooth);
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: transform var(--animation-fast) var(--easing-smooth);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+.hover-scale {
+  transition: transform var(--animation-fast) var(--easing-smooth);
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+.hover-glow:hover {
+  box-shadow: 0 4px 12px rgba(236, 103, 38, 0.4);
+}
