@@ -16,7 +16,7 @@ export * as Settings from './settings';
 
 // Export commonly used types directly
 export type { WindowsUser, JWTToken, SessionInfo, AuthResult, AuthConfig } from './auth';
-export type { WebSocketMessage, MessageType, WebSocketConfig, WebSocketState } from './websocket';
+export type { WebSocketMessage, MessageType, WebSocketConfig, WebSocketStats } from './websocket';
 export type { WindowInfo, BrowserTab, SessionContext } from './windows';
 export type { GhostWindowState, DetectedWindow, ConnectionStatus, ElectronWindowState } from './ui';
 export type { IpcResponse, IpcRequest, SystemInfo, ActiveWindowInfo } from './ipc';

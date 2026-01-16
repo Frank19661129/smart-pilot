@@ -61,7 +61,6 @@ export class WindowManager {
         sandbox: true,
         webSecurity: true,
         allowRunningInsecureContent: false,
-        enableRemoteModule: false,
       },
 
       // Show window when ready

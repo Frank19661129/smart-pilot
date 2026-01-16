@@ -2,7 +2,7 @@
   "name": "smart-pilot",
   "version": "1.0.0",
   "description": "Smart Pilot - Intelligent Windows companion app",
-  "main": "./dist/main/index.js",
+  "main": "./dist/main/main/index.js",
   "author": {
     "name": "Insurance Data",
     "email": "support@insurancedata.com"
@@ -69,7 +69,6 @@
       "version.json"
     ],
     "directories": {
-      "buildResources": "assets",
       "output": "release"
     },
     "win": {
@@ -83,8 +82,9 @@
           "arch": ["x64"]
         }
       ],
-      "icon": "assets/icons/icon.ico",
-      "artifactName": "${productName}-${version}-${arch}.${ext}"
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "sign": null,
+      "signingHashAlgorithms": []
     },
     "nsis": {
       "oneClick": false,

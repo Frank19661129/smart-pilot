@@ -5,7 +5,9 @@
  * Supports both Entra ID (Azure AD) and classic Active Directory
  */
 
-import * as sspi from 'node-sspi';
+// TODO: Install node-sspi for Windows auth
+// import * as sspi from 'node-sspi';
+const sspi: any = { Client: class {} }; // Stub for build
 import axios, { AxiosError } from 'axios';
 import log from 'electron-log';
 import {

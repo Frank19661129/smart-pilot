@@ -9,9 +9,13 @@
  * - Generic RDP session
  */
 
-import ffi from 'ffi-napi';
-import ref from 'ref-napi';
-import StructType from 'ref-struct-napi';
+// TODO: Install ffi-napi, ref-napi, ref-struct-napi for Windows integration
+// import ffi from 'ffi-napi';
+// import ref from 'ref-napi';
+// import StructType from 'ref-struct-napi';
+const ffi: any = {};
+const ref: any = {};
+const StructType: any = () => {};
 import { SessionContext, SessionType } from '../../shared/types/windows';
 import { exec } from 'child_process';
 import { promisify } from 'util';

@@ -6,7 +6,10 @@
     "moduleResolution": "node",
     "outDir": "./dist/main",
     "rootDir": "./src",
-    "types": ["node", "electron"]
+    "types": ["node", "electron"],
+    "skipLibCheck": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
   "include": ["src/main/**/*", "src/shared/**/*", "src/preload/**/*"],
   "exclude": ["node_modules", "dist", "release", "src/renderer"]

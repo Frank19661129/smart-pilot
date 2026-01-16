@@ -30,7 +30,7 @@ export function setupAuthHandlers(): void {
     log.info('Broadcasting auth state change:', event);
     // Broadcast to all windows
     const windows = require('electron').BrowserWindow.getAllWindows();
-    windows.forEach((window) => {
+    windows.forEach((window: any) => {
       window.webContents.send('auth-state-changed', event);
     });
   });

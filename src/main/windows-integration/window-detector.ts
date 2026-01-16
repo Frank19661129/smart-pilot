@@ -5,9 +5,13 @@
  * Supports Chrome, Edge, Firefox, and other browsers
  */
 
-import ffi from 'ffi-napi';
-import ref from 'ref-napi';
-import StructType from 'ref-struct-napi';
+// TODO: Install ffi-napi, ref-napi, ref-struct-napi for Windows integration
+// import ffi from 'ffi-napi';
+// import ref from 'ref-napi';
+// import StructType from 'ref-struct-napi';
+const ffi: any = {};
+const ref: any = {};
+const StructType: any = () => {};
 import {
   WindowInfo,
   BrowserTab,

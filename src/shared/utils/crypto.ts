@@ -49,7 +49,7 @@ const DEFAULT_KEY_PARAMS: KeyDerivationParams = {
 export function generateMachineSpecificKey(): string {
   try {
     // Get machine-specific identifiers
-    const machineId = machineIdSync({ original: true });
+    const machineId = machineIdSync(true);
     const appPath = app.getPath('userData');
     const appId = 'com.insurancedata.smartpilot';
 
@@ -97,7 +97,7 @@ function generateOrRetrieveSalt(): string {
 
     // For now, we generate a deterministic salt from machine ID
     // This is acceptable because we're using PBKDF2 with high iteration count
-    const machineId = machineIdSync({ original: true });
+    const machineId = machineIdSync(true);
     const saltSource = `smart-pilot-salt-${machineId}`;
 
     // Create a hash of the machine ID to use as salt

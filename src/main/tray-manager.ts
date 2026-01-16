@@ -97,7 +97,7 @@ export class TrayManager {
       {
         label: 'Quit',
         click: () => {
-          app.isQuitting = true;
+          (app as any).isQuitting = true;
           app.quit();
         },
       },
