@@ -6,6 +6,7 @@
 
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
+import log from 'electron-log';
 import { createLogger } from '../shared/utils/logger';
 import { initializeWindowHandlers, cleanupWindowHandlers } from './ipc/window-handlers';
 import { setupAuthHandlers, cleanupAuthHandlers } from './ipc/auth-handlers';
@@ -13,6 +14,15 @@ import { setupWebSocketHandlers, cleanupWebSocketHandlers } from './ipc/websocke
 import { initializeVersionHandlers, cleanupVersionHandlers } from './ipc/version-handlers';
 import { AuthService } from './auth/auth-service';
 import { getVersionInfo } from '../shared/utils/version';
+
+// Configure electron-log FIRST
+log.transports.file.level = 'debug';
+log.transports.console.level = 'debug';
+log.transports.file.maxSize = 10 * 1024 * 1024; // 10MB
+log.info('============================================================');
+log.info('ELECTRON-LOG INITIALIZED');
+log.info('Log file:', log.transports.file.getFile().path);
+log.info('============================================================');
 
 const logger = createLogger('Main');
 
@@ -22,68 +32,145 @@ let mainWindow: BrowserWindow | null = null;
  * Create main application window
  */
 function createWindow(): void {
-  const versionInfo = getVersionInfo();
-  const windowTitle = `Smart Pilot v${versionInfo.version}`;
+  log.info('Creating main window...');
 
-  mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, '../preload/preload.js')
-    },
-    title: windowTitle,
-    show: false
-  });
+  try {
+    const versionInfo = getVersionInfo();
+    const windowTitle = `Smart Pilot v${versionInfo.version}`;
 
-  // Load the app
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:3000');
-    mainWindow.webContents.openDevTools();
-  } else {
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+    log.info('Version info:', versionInfo);
+    log.info('Window title:', windowTitle);
+
+    const preloadPath = path.join(__dirname, '../preload/preload.js');
+    log.info('Preload path:', preloadPath);
+    log.info('__dirname:', __dirname);
+
+    mainWindow = new BrowserWindow({
+      width: 1200,
+      height: 800,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        preload: preloadPath
+      },
+      title: windowTitle,
+      show: false
+    });
+
+    log.info('BrowserWindow created successfully');
+
+    // Load the app
+    const isDev = process.env.NODE_ENV === 'development';
+    log.info('Environment:', isDev ? 'development' : 'production');
+
+    if (isDev) {
+      const devUrl = 'http://localhost:3000';
+      log.info('Loading dev URL:', devUrl);
+      mainWindow.loadURL(devUrl);
+      mainWindow.webContents.openDevTools();
+    } else {
+      const indexPath = path.join(__dirname, '../renderer/index.html');
+      log.info('Loading file:', indexPath);
+      log.info('File exists check - attempting to load...');
+      mainWindow.loadFile(indexPath).catch((err) => {
+        log.error('Failed to load index.html:', err);
+        log.error('Attempted path:', indexPath);
+        log.error('Resolved path:', path.resolve(indexPath));
+      });
+    }
+
+    // Log when page starts loading
+    mainWindow.webContents.on('did-start-loading', () => {
+      log.info('Page started loading...');
+    });
+
+    // Log when page finishes loading
+    mainWindow.webContents.on('did-finish-load', () => {
+      log.info('Page finished loading successfully');
+    });
+
+    // Log any navigation errors
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+      log.error('Failed to load page:', { errorCode, errorDescription });
+    });
+
+    mainWindow.once('ready-to-show', () => {
+      log.info('Window ready to show');
+      mainWindow?.show();
+    });
+
+    mainWindow.on('closed', () => {
+      log.info('Window closed');
+      mainWindow = null;
+    });
+
+    // Log all console messages from renderer
+    mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+      log.info(`[Renderer Console] ${message} (${sourceId}:${line})`);
+    });
+
+  } catch (error) {
+    log.error('Error creating window:', error);
+    throw error;
   }
-
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show();
-  });
-
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
 }
 
 /**
  * App ready event
  */
 app.on('ready', () => {
-  const versionInfo = getVersionInfo();
+  log.info('App ready event fired');
 
-  logger.info('='.repeat(60));
-  logger.info(`Smart Pilot v${versionInfo.version} (Build ${versionInfo.buildNumber})`);
-  logger.info('='.repeat(60));
-  logger.info('Platform:', process.platform);
-  logger.info('Electron version:', process.versions.electron);
-  logger.info('Node version:', process.versions.node);
-  logger.info('Environment:', versionInfo.environment);
-  if (versionInfo.gitCommit) {
-    logger.info('Git commit:', versionInfo.gitCommit);
-  }
-  logger.info('Build date:', versionInfo.buildDate.toISOString());
-  logger.info('='.repeat(60));
+  try {
+    const versionInfo = getVersionInfo();
 
-  // Initialize all IPC handlers
-  initializeWindowHandlers();
-  setupAuthHandlers();
-  initializeVersionHandlers();
+    log.info('='.repeat(60));
+    log.info(`Smart Pilot v${versionInfo.version} (Build ${versionInfo.buildNumber})`);
+    log.info('='.repeat(60));
+    log.info('Platform:', process.platform);
+    log.info('Arch:', process.arch);
+    log.info('Electron version:', process.versions.electron);
+    log.info('Node version:', process.versions.node);
+    log.info('Chrome version:', process.versions.chrome);
+    log.info('Environment:', versionInfo.environment);
+    log.info('App path:', app.getAppPath());
+    log.info('User data:', app.getPath('userData'));
+    log.info('Logs path:', app.getPath('logs'));
+    log.info('Temp path:', app.getPath('temp'));
+    if (versionInfo.gitCommit) {
+      log.info('Git commit:', versionInfo.gitCommit);
+    }
+    log.info('Build date:', versionInfo.buildDate.toISOString());
+    log.info('='.repeat(60));
 
-  // Create window
-  createWindow();
+    // Initialize all IPC handlers
+    log.info('Initializing IPC handlers...');
+    initializeWindowHandlers();
+    log.info('Window handlers initialized');
 
-  // Setup WebSocket handlers with window reference
-  if (mainWindow) {
-    setupWebSocketHandlers(mainWindow);
+    setupAuthHandlers();
+    log.info('Auth handlers initialized');
+
+    initializeVersionHandlers();
+    log.info('Version handlers initialized');
+
+    // Create window
+    log.info('Creating main window...');
+    createWindow();
+
+    // Setup WebSocket handlers with window reference
+    if (mainWindow) {
+      log.info('Setting up WebSocket handlers...');
+      setupWebSocketHandlers(mainWindow);
+      log.info('WebSocket handlers initialized');
+    } else {
+      log.warn('Main window is null, skipping WebSocket setup');
+    }
+
+    log.info('App initialization complete');
+  } catch (error) {
+    log.error('Error during app initialization:', error);
+    throw error;
   }
 });
 
@@ -127,12 +214,15 @@ app.on('before-quit', () => {
  * Handle uncaught exceptions
  */
 process.on('uncaughtException', (error) => {
-  logger.error('Uncaught exception:', error);
+  log.error('UNCAUGHT EXCEPTION:', error);
+  log.error('Stack:', error.stack);
+  console.error('UNCAUGHT EXCEPTION:', error);
 });
 
 /**
  * Handle unhandled promise rejections
  */
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled rejection:', { promise, reason });
+  log.error('UNHANDLED REJECTION:', { promise, reason });
+  console.error('UNHANDLED REJECTION:', { promise, reason });
 });
