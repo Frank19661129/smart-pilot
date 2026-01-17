@@ -14,6 +14,7 @@ import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import { WindowDetectorNative as WindowDetector } from '../windows-integration/window-detector-native';
 import { SessionDetector } from '../windows-integration/session-detector';
 import { ContextDetectionService, WindowContext } from '../services/context-detection-service';
+import { OverlayWindowService } from '../services/overlay-window-service';
 import {
   WindowInfo,
   BrowserTab,
@@ -52,12 +53,14 @@ export class WindowHandlers {
   private windowDetector: WindowDetector;
   private sessionDetector: SessionDetector;
   private contextDetector: ContextDetectionService;
+  private overlayService: OverlayWindowService;
   private isInitialized: boolean = false;
 
   constructor() {
     this.windowDetector = WindowDetector.getInstance();
     this.sessionDetector = SessionDetector.getInstance();
     this.contextDetector = ContextDetectionService.getInstance();
+    this.overlayService = OverlayWindowService.getInstance();
   }
 
   /**
@@ -87,6 +90,10 @@ export class WindowHandlers {
     // Context detection handlers
     ipcMain.handle('detect-window-context', this.handleDetectWindowContext.bind(this));
 
+    // Overlay handlers
+    ipcMain.handle('create-overlay', this.handleCreateOverlay.bind(this));
+    ipcMain.handle('destroy-overlay', this.handleDestroyOverlay.bind(this));
+
     this.isInitialized = true;
     console.log('WindowHandlers registered successfully');
   }
@@ -109,6 +116,8 @@ export class WindowHandlers {
     ipcMain.removeHandler('get-window-details');
     ipcMain.removeHandler('activate-window');
     ipcMain.removeHandler('detect-window-context');
+    ipcMain.removeHandler('create-overlay');
+    ipcMain.removeHandler('destroy-overlay');
 
     this.isInitialized = false;
     console.log('WindowHandlers unregistered');
@@ -389,6 +398,70 @@ export class WindowHandlers {
         } : details
       }
     };
+  }
+
+  /**
+   * Handle create-overlay request
+   */
+  private async handleCreateOverlay(
+    event: IpcMainInvokeEvent,
+    windowHandle: number,
+    relatienummer?: string
+  ): Promise<IpcResponse<boolean>> {
+    console.log(`IPC: create-overlay requested for window ${windowHandle}`);
+
+    try {
+      const success = await this.overlayService.createOverlay({
+        windowHandle,
+        relatienummer,
+      });
+
+      return {
+        success: true,
+        data: success,
+        timestamp: Date.now(),
+      };
+    } catch (error) {
+      console.error('[WindowHandlers] Error creating overlay:', error);
+      return {
+        success: false,
+        error: {
+          code: 'CREATE_OVERLAY_ERROR',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          details: error
+        }
+      };
+    }
+  }
+
+  /**
+   * Handle destroy-overlay request
+   */
+  private async handleDestroyOverlay(
+    event: IpcMainInvokeEvent,
+    windowHandle: number
+  ): Promise<IpcResponse<boolean>> {
+    console.log(`IPC: destroy-overlay requested for window ${windowHandle}`);
+
+    try {
+      this.overlayService.destroyOverlay(windowHandle);
+
+      return {
+        success: true,
+        data: true,
+        timestamp: Date.now(),
+      };
+    } catch (error) {
+      console.error('[WindowHandlers] Error destroying overlay:', error);
+      return {
+        success: false,
+        error: {
+          code: 'DESTROY_OVERLAY_ERROR',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          details: error
+        }
+      };
+    }
   }
 }
 

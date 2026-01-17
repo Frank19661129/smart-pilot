@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "tq1zVYJl7cPV5p2HD07qBpGxxahxXwDBq/I4uqwqOypItXYBy3FCH9CGkabeAsgJpIJ9IstbsK/svkXz2BSxGg==",
+  "success": true,
+  "projectFilePath": "D:\\dev\\insurance-data\\id-smartpilot\\resources\\GetWindowRect\\GetWindowRect.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\frank\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\5.0.17\\microsoft.netcore.app.runtime.win-x64.5.0.17.nupkg.sha512",
+    "C:\\Users\\frank\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\5.0.17\\microsoft.windowsdesktop.app.runtime.win-x64.5.0.17.nupkg.sha512",
+    "C:\\Users\\frank\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\5.0.17\\microsoft.aspnetcore.app.runtime.win-x64.5.0.17.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -13,6 +13,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'src/renderer/index.html'),
+        dropzone: resolve(__dirname, 'src/renderer/dropzone.html'),
       },
     },
   },

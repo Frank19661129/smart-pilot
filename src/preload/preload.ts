@@ -134,6 +134,8 @@ const smartPilotAPI: SmartPilotAPI = {
     getByClassName: (className: string) => ipcRenderer.invoke('get-windows-by-class', className),
     activate: (windowHandle: number) => ipcRenderer.invoke('activate-window', windowHandle),
     detectContext: (windowHandle: number) => ipcRenderer.invoke('detect-window-context', windowHandle),
+    createOverlay: (windowHandle: number, relatienummer?: string) => ipcRenderer.invoke('create-overlay', windowHandle, relatienummer),
+    destroyOverlay: (windowHandle: number) => ipcRenderer.invoke('destroy-overlay', windowHandle),
   },
 
   // Session detection
@@ -152,6 +154,11 @@ const smartPilotAPI: SmartPilotAPI = {
     setRefreshInterval: (interval: number) => ipcRenderer.invoke('settings-set-refresh-interval', interval),
     getAutoRefresh: () => ipcRenderer.invoke('settings-get-auto-refresh'),
     setAutoRefresh: (enabled: boolean) => ipcRenderer.invoke('settings-set-auto-refresh', enabled),
+  },
+
+  // Drop zone
+  dropzone: {
+    handleFileDrop: (filePaths: string[]) => ipcRenderer.invoke('dropzone-handle-file-drop', filePaths),
   },
 
   // Notifications

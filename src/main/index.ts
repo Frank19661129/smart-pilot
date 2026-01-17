@@ -13,8 +13,10 @@ import { initializeSettingsHandlers, cleanupSettingsHandlers } from './ipc/setti
 import { setupAuthHandlers, cleanupAuthHandlers } from './ipc/auth-handlers';
 import { setupWebSocketHandlers, cleanupWebSocketHandlers } from './ipc/websocket-handlers';
 import { initializeVersionHandlers, cleanupVersionHandlers } from './ipc/version-handlers';
+import { initializeDropZoneHandlers, cleanupDropZoneHandlers } from './ipc/dropzone-handlers';
 import { AuthService } from './auth/auth-service';
 import { ContextDetectionService } from './services/context-detection-service';
+import { OverlayWindowService } from './services/overlay-window-service';
 import { getVersionInfo } from '../shared/utils/version';
 
 // Configure electron-log FIRST
@@ -181,6 +183,9 @@ app.on('ready', () => {
     initializeVersionHandlers();
     log.info('Version handlers initialized');
 
+    initializeDropZoneHandlers();
+    log.info('Drop zone handlers initialized');
+
     // Create window
     log.info('Creating main window...');
     createWindow();
@@ -247,10 +252,12 @@ app.on('before-quit', async (event) => {
       cleanupAuthHandlers();
       cleanupWebSocketHandlers();
       cleanupVersionHandlers();
+      cleanupDropZoneHandlers();
 
       // Destroy singleton instances
       AuthService.destroyInstance();
       await ContextDetectionService.destroyInstance();
+      await OverlayWindowService.destroyInstance();
 
       logger.info('Cleanup complete');
     } catch (error) {

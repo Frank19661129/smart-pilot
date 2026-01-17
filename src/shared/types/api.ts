@@ -63,6 +63,8 @@ export interface SmartPilotAPI {
     getByClassName: (className: string) => Promise<IpcResponse<any>>;
     activate: (windowHandle: number) => Promise<IpcResponse<boolean>>;
     detectContext: (windowHandle: number) => Promise<IpcResponse<any>>;
+    createOverlay: (windowHandle: number, relatienummer?: string) => Promise<IpcResponse<boolean>>;
+    destroyOverlay: (windowHandle: number) => Promise<IpcResponse<boolean>>;
   };
 
   // Session detection - NEW!
@@ -81,6 +83,11 @@ export interface SmartPilotAPI {
     setRefreshInterval: (interval: number) => Promise<IpcResponse<void>>;
     getAutoRefresh: () => Promise<IpcResponse<boolean>>;
     setAutoRefresh: (enabled: boolean) => Promise<IpcResponse<void>>;
+  };
+
+  // Drop zone - NEW!
+  dropzone: {
+    handleFileDrop: (filePaths: string[]) => Promise<IpcResponse<{ imported: number; failed: number; files: string[] }>>;
   };
 
   // Legacy WebSocket
