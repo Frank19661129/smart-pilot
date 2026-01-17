@@ -11,6 +11,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false
   },
-  "include": ["src/main/**/*", "src/shared/**/*", "src/preload/**/*"],
+  "include": ["src/main/**/*", "src/shared/**/*"],
   "exclude": ["node_modules", "dist", "release", "src/renderer"]
 }

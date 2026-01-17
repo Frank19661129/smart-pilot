@@ -26,6 +26,7 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+*.lnk
 
 # Environment
 .env
@@ -39,8 +40,13 @@ Thumbs.db
 
 # Electron
 *.exe
+!resources/bin/*.exe
 *.dmg
 *.app
 
 # Version (generated during build)
 version.json
+
+# Test files
+test-*.html
+test-*.ps1

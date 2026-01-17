@@ -45,9 +45,25 @@ function createWindow(): void {
     log.info('Preload path:', preloadPath);
     log.info('__dirname:', __dirname);
 
+    // Get screen dimensions
+    const { screen } = require('electron');
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { height } = primaryDisplay.workAreaSize;
+
     mainWindow = new BrowserWindow({
-      width: 1200,
-      height: 800,
+      width: 400,
+      height: height,
+      x: 0, // Position at left edge of screen
+      y: 0,
+      frame: false, // Remove window frame and menu
+      transparent: false,
+      backgroundColor: '#4A4645',
+      resizable: true,
+      movable: true,
+      minimizable: true,
+      maximizable: false,
+      alwaysOnTop: false, // Can be toggled later
+      skipTaskbar: false,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
@@ -59,6 +75,12 @@ function createWindow(): void {
 
     log.info('BrowserWindow created successfully');
 
+    // Remove menu bar
+    mainWindow.setMenu(null);
+
+    // ALWAYS open DevTools for debugging (temporary)
+    mainWindow.webContents.openDevTools();
+
     // Load the app
     const isDev = process.env.NODE_ENV === 'development';
     log.info('Environment:', isDev ? 'development' : 'production');
@@ -67,15 +89,15 @@ function createWindow(): void {
       const devUrl = 'http://localhost:3000';
       log.info('Loading dev URL:', devUrl);
       mainWindow.loadURL(devUrl);
-      mainWindow.webContents.openDevTools();
     } else {
-      const indexPath = path.join(__dirname, '../renderer/index.html');
+      // __dirname is dist/main/main, renderer is at dist/renderer
+      const indexPath = path.join(__dirname, '../../renderer/index.html');
       log.info('Loading file:', indexPath);
+      log.info('Resolved path:', path.resolve(indexPath));
       log.info('File exists check - attempting to load...');
       mainWindow.loadFile(indexPath).catch((err) => {
         log.error('Failed to load index.html:', err);
         log.error('Attempted path:', indexPath);
-        log.error('Resolved path:', path.resolve(indexPath));
       });
     }
 

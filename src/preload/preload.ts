@@ -125,6 +125,21 @@ const smartPilotAPI: SmartPilotAPI = {
   getSystemInfo: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_GET_INFO),
   getActiveWindow: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_GET_ACTIVE_WINDOW),
 
+  // Windows detection
+  windows: {
+    getAll: () => ipcRenderer.invoke('get-all-windows'),
+    getBrowserTabs: () => ipcRenderer.invoke('get-browser-tabs'),
+    getActive: () => ipcRenderer.invoke('get-active-window'),
+    getByProcess: (processName: string) => ipcRenderer.invoke('get-windows-by-process', processName),
+    getByClassName: (className: string) => ipcRenderer.invoke('get-windows-by-class', className),
+  },
+
+  // Session detection
+  session: {
+    getContext: () => ipcRenderer.invoke('get-session-context'),
+    isRemote: () => ipcRenderer.invoke('is-remote-session'),
+  },
+
   // Notifications
   showNotification: (options: NotificationOptions) =>
     ipcRenderer.invoke(IPC_CHANNELS.NOTIFICATION_SHOW, options),

@@ -17,7 +17,8 @@
     "prebuild": "node scripts/generate-version.js",
     "build": "npm run build:renderer && npm run build:main",
     "build:renderer": "vite build",
-    "build:main": "tsc -p tsconfig.main.json",
+    "build:preload": "node scripts/build-preload.js",
+    "build:main": "tsc -p tsconfig.main.json && npm run build:preload",
     "prebuild:win": "node scripts/generate-version.js",
     "build:win": "npm run build && electron-builder --win --x64",
     "prepackage": "node scripts/generate-version.js",
@@ -31,6 +32,7 @@
   "dependencies": {
     "@fluentui/react-components": "^9.47.0",
     "@fluentui/react-icons": "^2.0.228",
+    "active-win": "8.1.0",
     "axios": "^1.6.7",
     "electron-log": "^5.0.1",
     "electron-store": "^8.1.0",
@@ -54,6 +56,7 @@
     "concurrently": "^8.2.2",
     "electron": "^28.2.0",
     "electron-builder": "^24.9.1",
+    "esbuild": "0.27.2",
     "eslint": "^8.56.0",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
@@ -68,6 +71,13 @@
       "package.json",
       "version.json"
     ],
+    "extraResources": [
+      {
+        "from": "resources/bin",
+        "to": "bin",
+        "filter": ["**/*"]
+      }
+    ],
     "directories": {
       "output": "release"
     },
@@ -75,11 +85,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "artifactName": "${productName}-${version}-${arch}.${ext}",

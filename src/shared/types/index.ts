@@ -14,6 +14,9 @@ export * as UI from './ui';
 export * as IPC from './ipc';
 export * as Settings from './settings';
 
+// Export API types
+export type { SmartPilotAPI } from './api';
+
 // Export commonly used types directly
 export type { WindowsUser, JWTToken, SessionInfo, AuthResult, AuthConfig } from './auth';
 export type { WebSocketMessage, MessageType, WebSocketConfig, WebSocketStats } from './websocket';

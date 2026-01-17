@@ -53,10 +53,19 @@ interface UseWindowStateReturn {
  */
 export const useWindowState = (): UseWindowStateReturn => {
   const store = createStore();
-  const [currentState, setCurrentState] = useState<WindowState>(
-    store.get('lastWindowState', 'handle') as WindowState
-  );
+
+  // TEMP: Force app state for testing - override any saved state
+  const initialState: WindowState = 'app';
+
+  const [currentState, setCurrentState] = useState<WindowState>(initialState);
   const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Force app state on mount for testing
+  useEffect(() => {
+    setCurrentState('app');
+    store.set('lastWindowState', 'app');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Save state to persistent storage whenever it changes
   useEffect(() => {

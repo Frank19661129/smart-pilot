@@ -10,7 +10,8 @@
  */
 
 import { ipcMain, IpcMainInvokeEvent } from 'electron';
-import { WindowDetector } from '../windows-integration/window-detector';
+// Use native C# executable for ALL Windows detection (enterprise-grade, bundled resource)
+import { WindowDetectorNative as WindowDetector } from '../windows-integration/window-detector-native';
 import { SessionDetector } from '../windows-integration/session-detector';
 import {
   WindowInfo,
@@ -52,8 +53,8 @@ export class WindowHandlers {
   private isInitialized: boolean = false;
 
   constructor() {
-    this.windowDetector = new WindowDetector();
-    this.sessionDetector = new SessionDetector();
+    this.windowDetector = WindowDetector.getInstance();
+    this.sessionDetector = SessionDetector.getInstance();
   }
 
   /**

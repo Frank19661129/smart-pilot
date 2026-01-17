@@ -1,57 +1,42 @@
 /**
- * Window List View Component
- * Displays detected windows/tabs with virtual scrolling
- *
- * Features:
- * - Virtual scrolling for performance (react-window)
- * - Loading and error states
- * - Animated window items with framer-motion
- * - Active window highlighting
- * - Application type icons
- * - Accessibility support
+ * WindowListView Component
+ * Displays detected windows in a compact, scrollable grid layout
  */
 
-import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
-import { FixedSizeList as List } from 'react-window';
-import {
-  Card,
-  Badge,
-  Avatar,
-} from '@fluentui/react-components';
-import {
-  Window24Regular,
-  Desktop24Regular,
-  Globe24Regular,
-  CircleFilled,
-} from '@fluentui/react-icons';
+import React, { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { themeTokens } from '../styles/theme';
-import { DetectedWindow } from '../types';
 
-// Hardcoded constants to avoid Vite module resolution issues
+/**
+ * UI Constants
+ */
 const UI_DIMENSIONS = {
-  CARD_MARGIN: 8,
-  CARD_PADDING: 12,
-  LIST_ITEM_HEIGHT: 100,
-  LIST_HEIGHT: 600,
-  BORDER_WIDTH: 1,
-  BORDER_WIDTH_ACTIVE: 2,
+  ROW_HEIGHT: 32,
+  ROW_PADDING: 8,
 } as const;
 
 /**
- * Loading state type for async operations
+ * DetectedWindow interface
+ */
+export interface DetectedWindow {
+  id: string;
+  title: string;
+  processName: string;
+  applicationType: 'browser' | 'desktop';
+  isActive: boolean;
+}
+
+/**
+ * Loading state
  */
 type LoadingState =
-  | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'success'; data: DetectedWindow[] }
   | { status: 'error'; error: string };
 
 /**
  * WindowListView Component
- * Renders list of detected windows with virtual scrolling
- *
- * @returns {JSX.Element} Rendered window list
+ * Renders list of detected windows in a compact grid
  */
 const WindowListView: React.FC = () => {
   const [loadingState, setLoadingState] = useState<LoadingState>({
@@ -62,190 +47,138 @@ const WindowListView: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
 
-    // Simulate fetching windows
-    const timer = setTimeout(() => {
-      if (isMounted) {
-        const mockWindows: DetectedWindow[] = [
-          {
-            id: '1',
-            title: 'Insurance Data Portal - Home',
-            processName: 'chrome.exe',
-            applicationType: 'browser',
-            url: 'https://portal.insurancedata.nl',
-            isActive: true,
-          },
-          {
-            id: '2',
-            title: 'Customer Policy Review',
-            processName: 'excel.exe',
-            applicationType: 'desktop',
-            isActive: false,
-          },
-          {
-            id: '3',
-            title: 'Claims Dashboard',
-            processName: 'chrome.exe',
-            applicationType: 'browser',
-            url: 'https://claims.insurancedata.nl',
-            isActive: false,
-          },
-          {
-            id: '4',
-            title: 'Underwriting Analysis.docx',
-            processName: 'winword.exe',
-            applicationType: 'desktop',
-            isActive: false,
-          },
-          {
-            id: '5',
-            title: 'Email - Inbox',
-            processName: 'outlook.exe',
-            applicationType: 'desktop',
-            isActive: false,
-          },
-        ];
+    console.log('[WindowListView] Mounting component...');
+
+    const fetchWindows = async () => {
+      try {
+        console.log('[WindowListView] Fetching windows from backend...');
+
+        // Call IPC to get all windows
+        const response = await window.smartPilot?.windows?.getAll();
+
+        console.log('[WindowListView] IPC Response:', response);
+
+        if (!response || !response.success) {
+          throw new Error(response?.error?.message || 'Failed to get windows');
+        }
+
+        const windowsData = response.data;
+        console.log('[WindowListView] Received windows data:', windowsData);
+
+        // Log errors if any
+        if (windowsData.errors && windowsData.errors.length > 0) {
+          console.error('[WindowListView] Errors from backend:', windowsData.errors);
+          throw new Error(windowsData.errors[0].message || 'Unknown error from backend');
+        }
+
+        // Map backend WindowInfo to frontend DetectedWindow format
+        const detectedWindows: DetectedWindow[] = windowsData.windows.map((win: any, index: number) => ({
+          id: String(win.windowHandle || index),
+          title: win.title,
+          processName: win.processName,
+          applicationType: 'desktop',
+          isActive: index === 0,
+        }));
+
+        console.log('[WindowListView] Mapped to DetectedWindow format:', detectedWindows.length, 'windows');
+
+        if (!isMounted) return;
 
         setLoadingState({
           status: 'success',
-          data: mockWindows,
+          data: detectedWindows,
+        });
+      } catch (error) {
+        console.error('[WindowListView] Error fetching windows:', error);
+        if (!isMounted) return;
+
+        setLoadingState({
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
-    }, 1000);
+    };
+
+    fetchWindows();
 
     return () => {
       isMounted = false;
-      clearTimeout(timer);
+      console.log('[WindowListView] Component unmounting...');
     };
   }, []);
 
   /**
-   * Get icon for application type
-   * @param {string} type - Application type
-   * @returns {JSX.Element} Icon component
+   * Render compact table row
    */
-  const getApplicationIcon = useCallback((type: string): JSX.Element => {
-    switch (type) {
-      case 'browser':
-        return <Globe24Regular />;
-      case 'desktop':
-        return <Desktop24Regular />;
-      default:
-        return <Window24Regular />;
-    }
-  }, []);
-
-  /**
-   * Memoized window item renderer
-   */
-  const WindowItem = useCallback(
-    ({ index, style }: { index: number; style: React.CSSProperties }): JSX.Element => {
-      if (loadingState.status !== 'success') {
-        return <div style={style} />;
-      }
-
-      const window = loadingState.data[index];
-    
+  const renderWindowRow = useCallback(
+    (window: DetectedWindow, index: number): JSX.Element => {
       return (
         <motion.div
-          style={style}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: index * 0.05 }}
+          key={window.id}
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.1, delay: index * 0.005 }}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr auto',
+            gap: '12px',
+            padding: `${UI_DIMENSIONS.ROW_PADDING}px 12px`,
+            height: `${UI_DIMENSIONS.ROW_HEIGHT}px`,
+            alignItems: 'center',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+            background: window.isActive
+              ? 'rgba(255, 138, 0, 0.1)'
+              : 'transparent',
+            borderLeft: window.isActive
+              ? `3px solid ${themeTokens.colors.orange}`
+              : '3px solid transparent',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = window.isActive
+              ? 'rgba(255, 138, 0, 0.1)'
+              : 'transparent';
+          }}
+          role="row"
         >
-          <Card
-            role="listitem"
-            aria-label={`${window.title}, ${window.processName}, ${window.isActive ? 'active' : 'inactive'}`}
+          {/* Title Column */}
+          <div
             style={{
-              margin: `${UI_DIMENSIONS.CARD_MARGIN}px ${UI_DIMENSIONS.CARD_PADDING}px`,
-              background: window.isActive
-                ? `linear-gradient(135deg, ${themeTokens.colors.grayMedium} 0%, ${themeTokens.colors.grayDark} 100%)`
-                : themeTokens.colors.grayMedium,
-              border: window.isActive
-                ? `${UI_DIMENSIONS.BORDER_WIDTH_ACTIVE}px solid ${themeTokens.colors.orange}`
-                : `${UI_DIMENSIONS.BORDER_WIDTH}px solid rgba(255, 255, 255, 0.1)`,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
+              color: 'white',
+              fontSize: '11px',
+              fontWeight: window.isActive ? 600 : 400,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
+            title={window.title}
+            role="cell"
           >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: `${UI_DIMENSIONS.CARD_PADDING}px`,
-              }}
-            >
-              <Avatar
-                icon={getApplicationIcon(window.applicationType)}
-                color="colorful"
-                aria-label={`${window.applicationType} application`}
-                style={{
-                  background: window.isActive
-                    ? themeTokens.colors.orange
-                    : themeTokens.colors.grayLight,
-                }}
-              />
+            {window.title}
+          </div>
 
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    marginBottom: '4px',
-                  }}
-                >
-                  {window.isActive && (
-                    <CircleFilled
-                      style={{
-                        fontSize: '8px',
-                        color: themeTokens.colors.orange,
-                      }}
-                      aria-label="Active indicator"
-                    />
-                  )}
-                  <span
-                    style={{
-                      color: 'white',
-                      fontSize: '14px',
-                      fontWeight: window.isActive ? 600 : 400,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {window.title}
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  <span
-                    style={{
-                      color: themeTokens.colors.grayLight,
-                      fontSize: '12px',
-                    }}
-                  >
-                    {window.processName}
-                  </span>
-                  {window.applicationType === 'browser' && (
-                    <Badge appearance="outline" color="informative" size="small">
-                      Web
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-          </Card>
+          {/* Window Handle Column */}
+          <div
+            style={{
+              color: themeTokens.colors.grayLight,
+              fontSize: '10px',
+              fontFamily: 'monospace',
+              textAlign: 'right',
+              flexShrink: 0,
+            }}
+            title={`Handle: ${window.id}`}
+            role="cell"
+          >
+            {window.id}
+          </div>
         </motion.div>
       );
     },
-    [loadingState, getApplicationIcon]
+    []
   );
 
   // Memoize window count to prevent recalculation
@@ -256,6 +189,7 @@ const WindowListView: React.FC = () => {
 
   // Loading state
   if (loadingState.status === 'loading') {
+    console.log('[WindowListView] Rendering loading state');
     return (
       <div
         style={{
@@ -298,28 +232,33 @@ const WindowListView: React.FC = () => {
     );
   }
 
-  // Success state
+  // Success state - Compact grid layout
+  console.log('[WindowListView] Rendering success state with', windowCount, 'windows');
   return (
     <div
       style={{
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
+        overflow: 'hidden',
       }}
       role="region"
       aria-label="Window list"
     >
+      {/* Header */}
       <div
         style={{
-          padding: '16px 12px 8px',
+          padding: '12px 12px 8px',
           borderBottom: `1px solid ${themeTokens.colors.grayLight}`,
+          flexShrink: 0,
         }}
       >
         <h3
           style={{
             color: 'white',
-            fontSize: '18px',
+            fontSize: '16px',
             margin: 0,
+            fontWeight: 600,
           }}
           id="window-list-heading"
         >
@@ -328,8 +267,8 @@ const WindowListView: React.FC = () => {
         <p
           style={{
             color: themeTokens.colors.grayLight,
-            fontSize: '12px',
-            margin: '4px 0 0',
+            fontSize: '11px',
+            margin: '3px 0 0',
           }}
           aria-live="polite"
         >
@@ -337,15 +276,38 @@ const WindowListView: React.FC = () => {
         </p>
       </div>
 
-      <div style={{ flex: 1 }} role="list" aria-labelledby="window-list-heading">
-        <List
-          height={UI_DIMENSIONS.LIST_HEIGHT}
-          itemCount={windowCount}
-          itemSize={UI_DIMENSIONS.LIST_ITEM_HEIGHT}
-          width="100%"
-        >
-          {WindowItem}
-        </List>
+      {/* Table Header */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto',
+          gap: '12px',
+          padding: '8px 12px',
+          background: 'rgba(255, 255, 255, 0.03)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          fontSize: '10px',
+          fontWeight: 600,
+          color: themeTokens.colors.grayLight,
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px',
+        }}
+        role="row"
+      >
+        <div role="columnheader">Window Title</div>
+        <div role="columnheader" style={{ textAlign: 'right' }}>Handle</div>
+      </div>
+
+      {/* Scrollable table body */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+        }}
+        role="table"
+        aria-labelledby="window-list-heading"
+      >
+        {loadingState.data.map((window, index) => renderWindowRow(window, index))}
       </div>
     </div>
   );
