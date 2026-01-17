@@ -3,7 +3,7 @@
  * Displays detected windows in a compact, scrollable grid layout
  */
 
-import React, { useState, useEffect, memo, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, memo, useCallback, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@fluentui/react-components';
 import { ArrowUpload20Regular } from '@fluentui/react-icons';
@@ -26,6 +26,8 @@ export interface DetectedWindow {
   processName: string;
   applicationType: 'browser' | 'desktop';
   isActive: boolean;
+  context?: string; // Relatienummer from OCR
+  contextLoading?: boolean; // True while OCR is running
 }
 
 /**
@@ -47,6 +49,9 @@ const WindowListView: React.FC = () => {
   const [windowFilter, setWindowFilter] = useState<string>('');
   const [refreshInterval, setRefreshInterval] = useState<number>(5);
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
+
+  // Cache for context detection results (persists across refreshes)
+  const contextCacheRef = useRef<Map<string, { context?: string; loading: boolean }>>(new Map());
 
   // Load settings
   useEffect(() => {
@@ -94,13 +99,23 @@ const WindowListView: React.FC = () => {
         }
 
         // Map backend WindowInfo to frontend DetectedWindow format
-        let detectedWindows: DetectedWindow[] = windowsData.windows.map((win: any, index: number) => ({
-          id: String(win.windowHandle || index),
-          title: win.title,
-          processName: win.processName,
-          applicationType: 'desktop',
-          isActive: index === 0,
-        }));
+        let detectedWindows: DetectedWindow[] = windowsData.windows.map((win: any, index: number) => {
+          const windowId = String(win.windowHandle || index);
+          const cachedContext = contextCacheRef.current.get(windowId);
+
+          // If we have a cache entry, use it. Otherwise, mark as loading (will be detected)
+          const isNewWindow = !cachedContext;
+
+          return {
+            id: windowId,
+            title: win.title,
+            processName: win.processName,
+            applicationType: 'desktop',
+            isActive: index === 0,
+            context: cachedContext?.context,
+            contextLoading: isNewWindow ? true : (cachedContext?.loading ?? false),
+          };
+        });
 
         // Apply filter if set
         if (windowFilter && windowFilter.trim()) {
@@ -123,6 +138,121 @@ const WindowListView: React.FC = () => {
           status: 'success',
           data: detectedWindows,
         });
+
+        // Cleanup cache: remove windows that no longer exist
+        const currentWindowIds = new Set(detectedWindows.map(w => w.id));
+        const cachedWindowIds = Array.from(contextCacheRef.current.keys());
+        cachedWindowIds.forEach(cachedId => {
+          if (!currentWindowIds.has(cachedId)) {
+            console.log(`[WindowListView] Removing stale cache entry for window ${cachedId}`);
+            contextCacheRef.current.delete(cachedId);
+          }
+        });
+
+        // Detect context ONLY for NEW windows (not in cache)
+        const detectContextForNewWindows = async () => {
+          for (const win of detectedWindows) {
+            // Skip if already in cache
+            if (contextCacheRef.current.has(win.id)) {
+              console.log(`[WindowListView] Using cached context for window ${win.id}`);
+              continue;
+            }
+
+            // Mark as loading in cache
+            contextCacheRef.current.set(win.id, { loading: true });
+
+            try {
+              console.log(`[WindowListView] Detecting context for NEW window ${win.id}...`);
+              const contextResponse = await window.smartPilot?.windows?.detectContext(Number(win.id));
+
+            if (!isMounted) return;
+
+            if (contextResponse?.success && contextResponse?.data) {
+              const contextData = contextResponse.data;
+              const relatienummer = contextData.relatienummer || undefined;
+              console.log(`[WindowListView] Context detected for window ${win.id}:`, relatienummer);
+
+              // Update cache
+              contextCacheRef.current.set(win.id, {
+                context: relatienummer,
+                loading: false,
+              });
+
+              // Update UI
+              setLoadingState(prevState => {
+                if (prevState.status !== 'success') return prevState;
+
+                const updatedWindows = prevState.data.map(w => {
+                  if (w.id === win.id) {
+                    return {
+                      ...w,
+                      context: relatienummer,
+                      contextLoading: false,
+                    };
+                  }
+                  return w;
+                });
+
+                return {
+                  status: 'success',
+                  data: updatedWindows,
+                };
+              });
+            } else {
+              console.warn(`[WindowListView] No context found for window ${win.id}`);
+
+              // Update cache - no context found
+              contextCacheRef.current.set(win.id, {
+                loading: false,
+              });
+
+              // Update UI
+              setLoadingState(prevState => {
+                if (prevState.status !== 'success') return prevState;
+
+                const updatedWindows = prevState.data.map(w => {
+                  if (w.id === win.id) {
+                    return { ...w, contextLoading: false };
+                  }
+                  return w;
+                });
+
+                return {
+                  status: 'success',
+                  data: updatedWindows,
+                };
+              });
+            }
+          } catch (error) {
+            console.error(`[WindowListView] Error detecting context for window ${win.id}:`, error);
+
+            // Update cache - error occurred
+            contextCacheRef.current.set(win.id, {
+              loading: false,
+            });
+
+            // Update UI
+            setLoadingState(prevState => {
+              if (prevState.status !== 'success') return prevState;
+
+              const updatedWindows = prevState.data.map(w => {
+                if (w.id === win.id) {
+                  return { ...w, contextLoading: false };
+                }
+                return w;
+              });
+
+              return {
+                status: 'success',
+                data: updatedWindows,
+              };
+            });
+          }
+        }
+        };
+
+        // Start context detection for new windows (don't await - runs in background)
+        detectContextForNewWindows();
       } catch (error) {
         console.error('[WindowListView] Error fetching windows:', error);
         if (!isMounted) return;
@@ -188,7 +318,7 @@ const WindowListView: React.FC = () => {
           transition={{ duration: 0.1, delay: index * 0.005 }}
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr auto auto',
+            gridTemplateColumns: '1fr auto auto auto',
             gap: '12px',
             padding: `${UI_DIMENSIONS.ROW_PADDING}px 12px`,
             height: `${UI_DIMENSIONS.ROW_HEIGHT}px`,
@@ -241,6 +371,22 @@ const WindowListView: React.FC = () => {
             role="cell"
           >
             {window.id}
+          </div>
+
+          {/* Context Column (Relatienummer) */}
+          <div
+            style={{
+              color: window.context ? themeTokens.colors.orange : themeTokens.colors.grayLight,
+              fontSize: '10px',
+              fontFamily: 'monospace',
+              textAlign: 'center',
+              flexShrink: 0,
+              width: '90px',
+            }}
+            title={window.context ? `Relatienummer: ${window.context}` : 'Geen context'}
+            role="cell"
+          >
+            {window.contextLoading ? '...' : window.context || '-'}
           </div>
 
           {/* Activate Button Column */}
@@ -374,7 +520,7 @@ const WindowListView: React.FC = () => {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1fr auto auto',
+          gridTemplateColumns: '1fr auto auto auto',
           gap: '12px',
           padding: '8px 12px',
           background: 'rgba(255, 255, 255, 0.03)',
@@ -389,6 +535,7 @@ const WindowListView: React.FC = () => {
       >
         <div role="columnheader">Window Title</div>
         <div role="columnheader" style={{ textAlign: 'right' }}>Handle</div>
+        <div role="columnheader" style={{ textAlign: 'center', width: '90px' }}>Context</div>
         <div role="columnheader" style={{ textAlign: 'right', width: '100px' }}>Actie</div>
       </div>
 

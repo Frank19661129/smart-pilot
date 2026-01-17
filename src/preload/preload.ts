@@ -133,6 +133,7 @@ const smartPilotAPI: SmartPilotAPI = {
     getByProcess: (processName: string) => ipcRenderer.invoke('get-windows-by-process', processName),
     getByClassName: (className: string) => ipcRenderer.invoke('get-windows-by-class', className),
     activate: (windowHandle: number) => ipcRenderer.invoke('activate-window', windowHandle),
+    detectContext: (windowHandle: number) => ipcRenderer.invoke('detect-window-context', windowHandle),
   },
 
   // Session detection

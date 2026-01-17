@@ -14,6 +14,7 @@ import { setupAuthHandlers, cleanupAuthHandlers } from './ipc/auth-handlers';
 import { setupWebSocketHandlers, cleanupWebSocketHandlers } from './ipc/websocket-handlers';
 import { initializeVersionHandlers, cleanupVersionHandlers } from './ipc/version-handlers';
 import { AuthService } from './auth/auth-service';
+import { ContextDetectionService } from './services/context-detection-service';
 import { getVersionInfo } from '../shared/utils/version';
 
 // Configure electron-log FIRST
@@ -221,7 +222,7 @@ app.on('activate', () => {
 /**
  * Before quit event
  */
-app.on('before-quit', () => {
+app.on('before-quit', async () => {
   logger.info('Smart Pilot shutting down...');
 
   // Cleanup all handlers and services
@@ -233,6 +234,7 @@ app.on('before-quit', () => {
 
   // Destroy singleton instances
   AuthService.destroyInstance();
+  await ContextDetectionService.destroyInstance();
 
   logger.info('Cleanup complete');
 });

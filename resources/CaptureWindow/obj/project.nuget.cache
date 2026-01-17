@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "H6ty+OinldiXyQEoAAiwIXakdbGWgtymG2qMX2yb541slTCNQG/qQ0qddIBRjeGcqIbnTWB4YiQBlwW0d9BUog==",
+  "success": true,
+  "projectFilePath": "D:\\dev\\insurance-data\\id-smartpilot\\resources\\CaptureWindow\\CaptureWindow.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\frank\\.nuget\\packages\\microsoft.netcore.platforms\\5.0.0\\microsoft.netcore.platforms.5.0.0.nupkg.sha512",
+    "C:\\Users\\frank\\.nuget\\packages\\microsoft.win32.systemevents\\5.0.0\\microsoft.win32.systemevents.5.0.0.nupkg.sha512",
+    "C:\\Users\\frank\\.nuget\\packages\\system.drawing.common\\5.0.3\\system.drawing.common.5.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

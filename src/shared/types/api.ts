@@ -61,12 +61,26 @@ export interface SmartPilotAPI {
     getActive: () => Promise<any>;
     getByProcess: (processName: string) => Promise<IpcResponse<any>>;
     getByClassName: (className: string) => Promise<IpcResponse<any>>;
+    activate: (windowHandle: number) => Promise<IpcResponse<boolean>>;
+    detectContext: (windowHandle: number) => Promise<IpcResponse<any>>;
   };
 
   // Session detection - NEW!
   session: {
     getContext: () => Promise<IpcResponse<SessionContext>>;
     isRemote: () => Promise<IpcResponse<boolean>>;
+  };
+
+  // Settings - NEW!
+  settings: {
+    getWindowDetection: () => Promise<IpcResponse<any>>;
+    setWindowDetection: (settings: any) => Promise<IpcResponse<any>>;
+    getWindowFilter: () => Promise<IpcResponse<string>>;
+    setWindowFilter: (filter: string) => Promise<IpcResponse<void>>;
+    getRefreshInterval: () => Promise<IpcResponse<number>>;
+    setRefreshInterval: (interval: number) => Promise<IpcResponse<void>>;
+    getAutoRefresh: () => Promise<IpcResponse<boolean>>;
+    setAutoRefresh: (enabled: boolean) => Promise<IpcResponse<void>>;
   };
 
   // Legacy WebSocket

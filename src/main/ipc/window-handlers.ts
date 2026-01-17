@@ -13,6 +13,7 @@ import { ipcMain, IpcMainInvokeEvent } from 'electron';
 // Use native C# executable for ALL Windows detection (enterprise-grade, bundled resource)
 import { WindowDetectorNative as WindowDetector } from '../windows-integration/window-detector-native';
 import { SessionDetector } from '../windows-integration/session-detector';
+import { ContextDetectionService, WindowContext } from '../services/context-detection-service';
 import {
   WindowInfo,
   BrowserTab,
@@ -50,11 +51,13 @@ type IpcResponse<T> = SuccessResponse<T> | ErrorResponse;
 export class WindowHandlers {
   private windowDetector: WindowDetector;
   private sessionDetector: SessionDetector;
+  private contextDetector: ContextDetectionService;
   private isInitialized: boolean = false;
 
   constructor() {
     this.windowDetector = WindowDetector.getInstance();
     this.sessionDetector = SessionDetector.getInstance();
+    this.contextDetector = ContextDetectionService.getInstance();
   }
 
   /**
@@ -81,6 +84,9 @@ export class WindowHandlers {
     ipcMain.handle('get-window-details', this.handleGetWindowDetails.bind(this));
     ipcMain.handle('activate-window', this.handleActivateWindow.bind(this));
 
+    // Context detection handlers
+    ipcMain.handle('detect-window-context', this.handleDetectWindowContext.bind(this));
+
     this.isInitialized = true;
     console.log('WindowHandlers registered successfully');
   }
@@ -102,6 +108,7 @@ export class WindowHandlers {
     ipcMain.removeHandler('is-remote-session');
     ipcMain.removeHandler('get-window-details');
     ipcMain.removeHandler('activate-window');
+    ipcMain.removeHandler('detect-window-context');
 
     this.isInitialized = false;
     console.log('WindowHandlers unregistered');
@@ -334,6 +341,35 @@ export class WindowHandlers {
     } catch (error) {
       console.error('Error in activate-window:', error);
       return this.createErrorResponse('ACTIVATE_WINDOW_ERROR', 'Failed to activate window', error);
+    }
+  }
+
+  /**
+   * Handle detect-window-context request
+   * Detects Relatienummer from window screenshot using OCR
+   */
+  private async handleDetectWindowContext(
+    event: IpcMainInvokeEvent,
+    windowHandle: number
+  ): Promise<IpcResponse<WindowContext>> {
+    try {
+      // Validate input
+      if (typeof windowHandle !== 'number') {
+        return this.createErrorResponse('INVALID_INPUT', 'Window handle must be a number');
+      }
+
+      console.log(`IPC: detect-window-context requested for handle ${windowHandle}`);
+
+      const context = await this.contextDetector.detectContext(windowHandle);
+
+      return {
+        success: true,
+        data: context,
+        timestamp: Date.now()
+      };
+    } catch (error) {
+      console.error('Error in detect-window-context:', error);
+      return this.createErrorResponse('DETECT_CONTEXT_ERROR', 'Failed to detect window context', error);
     }
   }
 
