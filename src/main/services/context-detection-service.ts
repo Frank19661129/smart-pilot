@@ -108,15 +108,14 @@ export class ContextDetectionService {
 
     log.info(`[ContextDetectionService] Preprocessing image for OCR...`);
 
+    // Minimal preprocessing: only resize for better OCR on small text
+    // Keep original colors - grayscale makes it worse!
     await sharp(imagePath)
-      .resize(null, 3000, { // Scale up to 3000px height for better OCR on small text
+      .resize(null, 2400, { // Scale up to 2400px height
         withoutEnlargement: false,
         fit: 'inside',
         kernel: sharp.kernel.lanczos3, // High quality scaling
       })
-      .greyscale() // Convert to grayscale
-      .linear(1.5, -30) // Increase contrast: multiply by 1.5, subtract 30
-      .sharpen({ sigma: 1.5 }) // Gentle sharpening
       .toFile(preprocessedPath);
 
     log.info(`[ContextDetectionService] Preprocessed image saved: ${preprocessedPath}`);
