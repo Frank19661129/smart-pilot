@@ -18,12 +18,14 @@ import {
   RadioGroup,
   Slider,
   Label,
+  Input,
 } from '@fluentui/react-components';
 import { Dismiss24Regular, Info24Regular } from '@fluentui/react-icons';
 import { motion } from 'framer-motion';
 import { themeTokens } from '../styles/theme';
 import { AppSettings, PanelPosition } from '../types';
 import { createStore } from '../utils/store';
+import { WindowDetectionSettings } from '../../shared/types/settings';
 
 // Hardcoded constants to avoid Vite module resolution issues
 const SETTINGS_PANEL = {
@@ -60,11 +62,34 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onClose }) => {
     })
   );
   const [versionInfo, setVersionInfo] = useState<any>(null);
+  const [windowDetectionSettings, setWindowDetectionSettings] = useState<WindowDetectionSettings>({
+    windowFilter: '',
+    refreshInterval: 5,
+    enableAutoRefresh: true,
+  });
 
   // Save settings to store whenever they change
   useEffect(() => {
     store.set('appSettings', settings);
   }, [settings, store]);
+
+  // Load window detection settings
+  useEffect(() => {
+    window.smartPilot?.settings?.getWindowDetection?.().then((response: any) => {
+      if (response?.success && response?.data) {
+        setWindowDetectionSettings(response.data);
+      }
+    }).catch((error: any) => {
+      console.error('Failed to get window detection settings:', error);
+    });
+  }, []);
+
+  // Save window detection settings when they change
+  useEffect(() => {
+    window.smartPilot?.settings?.setWindowDetection?.(windowDetectionSettings).catch((error: any) => {
+      console.error('Failed to save window detection settings:', error);
+    });
+  }, [windowDetectionSettings]);
 
   // Load version info
   useEffect(() => {
@@ -104,6 +129,27 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onClose }) => {
    */
   const handlePanelHeightChange = useCallback((value: number): void => {
     setSettings((prev) => ({ ...prev, panelHeight: value }));
+  }, []);
+
+  /**
+   * Handle window filter change
+   */
+  const handleWindowFilterChange = useCallback((value: string): void => {
+    setWindowDetectionSettings((prev) => ({ ...prev, windowFilter: value }));
+  }, []);
+
+  /**
+   * Handle refresh interval change
+   */
+  const handleRefreshIntervalChange = useCallback((value: number): void => {
+    setWindowDetectionSettings((prev) => ({ ...prev, refreshInterval: value }));
+  }, []);
+
+  /**
+   * Handle auto-refresh toggle
+   */
+  const handleAutoRefreshChange = useCallback((checked: boolean): void => {
+    setWindowDetectionSettings((prev) => ({ ...prev, enableAutoRefresh: checked }));
   }, []);
 
   return (
@@ -243,6 +289,115 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onClose }) => {
           <span>{SETTINGS_PANEL.MIN_HEIGHT}px</span>
           <span>{SETTINGS_PANEL.MAX_HEIGHT}px</span>
         </div>
+      </div>
+
+      {/* Window Detection Settings */}
+      <div style={{
+        marginBottom: themeTokens.spacing.lg,
+        padding: themeTokens.spacing.lg,
+        background: 'rgba(255, 138, 0, 0.1)',
+        borderRadius: themeTokens.borderRadius.md,
+        borderLeft: `3px solid ${themeTokens.colors.orange}`,
+      }}>
+        <h3 style={{
+          color: 'white',
+          fontSize: '18px',
+          margin: '0 0 16px 0',
+          fontWeight: 600,
+        }}>
+          Window Detection
+        </h3>
+
+        {/* Window Filter */}
+        <div style={{ marginBottom: themeTokens.spacing.md }}>
+          <Label
+            style={{
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: 600,
+              marginBottom: '8px',
+              display: 'block',
+            }}
+          >
+            Window Filter
+          </Label>
+          <Input
+            value={windowDetectionSettings.windowFilter}
+            onChange={(_, data) => handleWindowFilterChange(data.value)}
+            placeholder="chrome, excel, word (comma separated)"
+            style={{
+              width: '100%',
+              background: 'rgba(0, 0, 0, 0.3)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              color: 'white',
+            }}
+          />
+          <p style={{
+            color: themeTokens.colors.grayLight,
+            fontSize: '11px',
+            margin: '4px 0 0 0',
+            fontStyle: 'italic',
+          }}>
+            Filter windows by keywords. Leave empty to show all windows.
+          </p>
+        </div>
+
+        {/* Auto Refresh Toggle */}
+        <div style={{
+          marginBottom: themeTokens.spacing.md,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <Label
+            style={{
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: 600,
+            }}
+          >
+            Auto-refresh window list
+          </Label>
+          <Switch
+            checked={windowDetectionSettings.enableAutoRefresh}
+            onChange={(_, data) => handleAutoRefreshChange(data.checked)}
+          />
+        </div>
+
+        {/* Refresh Interval */}
+        {windowDetectionSettings.enableAutoRefresh && (
+          <div>
+            <Label
+              style={{
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 600,
+                marginBottom: '8px',
+                display: 'block',
+              }}
+            >
+              Refresh Interval: {windowDetectionSettings.refreshInterval} seconds
+            </Label>
+            <Slider
+              value={windowDetectionSettings.refreshInterval}
+              min={1}
+              max={60}
+              step={1}
+              onChange={(_, data) => handleRefreshIntervalChange(data.value)}
+              style={{ width: '100%' }}
+            />
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              color: themeTokens.colors.grayLight,
+              fontSize: '11px',
+              marginTop: '4px',
+            }}>
+              <span>1 sec</span>
+              <span>60 sec</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* About Section */}

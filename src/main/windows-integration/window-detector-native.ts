@@ -217,6 +217,55 @@ export class WindowDetectorNative {
   }
 
   /**
+   * Activate window (bring to foreground)
+   */
+  public async activateWindow(windowHandle: number): Promise<{ success: boolean; error?: string }> {
+    log.info(`[WindowDetectorNative] activateWindow(${windowHandle}) called`);
+
+    try {
+      // Path to ActivateWindow.exe
+      const isDev = !app.isPackaged;
+      const activatePath = isDev
+        ? path.join(process.cwd(), 'resources', 'bin', 'ActivateWindow.exe')
+        : path.join(process.resourcesPath, 'bin', 'ActivateWindow.exe');
+
+      log.debug('[WindowDetectorNative] ActivateWindow.exe path:', activatePath);
+
+      const { stdout, stderr } = await execAsync(`"${activatePath}" ${windowHandle}`, {
+        timeout: 3000,
+        maxBuffer: 512 * 1024,
+      });
+
+      if (stderr) {
+        log.warn('[WindowDetectorNative] stderr:', stderr);
+        return { success: false, error: stderr };
+      }
+
+      log.debug('[WindowDetectorNative] stdout:', stdout);
+
+      // Parse JSON response
+      try {
+        const result = JSON.parse(stdout.trim());
+        if (result.success) {
+          log.info(`[WindowDetectorNative] Successfully activated window ${windowHandle}`);
+          return { success: true };
+        } else {
+          return { success: false, error: 'Activation failed' };
+        }
+      } catch (parseError) {
+        log.error('[WindowDetectorNative] JSON parse error:', parseError);
+        return { success: false, error: 'Invalid response from ActivateWindow.exe' };
+      }
+    } catch (error) {
+      log.error('[WindowDetectorNative] Error activating window:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
    * Cleanup
    */
   public static destroyInstance(): void {

@@ -24,5 +24,11 @@ export interface ElectronWindowSettings {
   backdropEffect: 'acrylic' | 'mica' | 'none';
 }
 
+export interface WindowDetectionSettings {
+  windowFilter: string; // Comma-separated keywords to filter windows
+  refreshInterval: number; // Refresh interval in seconds (default: 5)
+  enableAutoRefresh: boolean; // Enable/disable auto-refresh
+}
+
 // Union type for all settings
-export type AppSettings = GhostInterfaceSettings | ElectronWindowSettings;
+export type AppSettings = GhostInterfaceSettings | ElectronWindowSettings | WindowDetectionSettings;

@@ -5,6 +5,8 @@
 
 import React, { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { Button } from '@fluentui/react-components';
+import { ArrowUpload20Regular } from '@fluentui/react-icons';
 import { themeTokens } from '../styles/theme';
 
 /**
@@ -42,6 +44,26 @@ const WindowListView: React.FC = () => {
   const [loadingState, setLoadingState] = useState<LoadingState>({
     status: 'loading',
   });
+  const [windowFilter, setWindowFilter] = useState<string>('');
+  const [refreshInterval, setRefreshInterval] = useState<number>(5);
+  const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
+
+  // Load settings
+  useEffect(() => {
+    console.log('[WindowListView] Loading settings...');
+
+    window.smartPilot?.settings?.getWindowDetection?.().then((response: any) => {
+      if (response?.success && response?.data) {
+        const settings = response.data;
+        setWindowFilter(settings.windowFilter || '');
+        setRefreshInterval(settings.refreshInterval || 5);
+        setAutoRefresh(settings.enableAutoRefresh !== false);
+        console.log('[WindowListView] Settings loaded:', settings);
+      }
+    }).catch((error: any) => {
+      console.error('[WindowListView] Failed to load settings:', error);
+    });
+  }, []);
 
   // Fetch windows with cleanup
   useEffect(() => {
@@ -72,7 +94,7 @@ const WindowListView: React.FC = () => {
         }
 
         // Map backend WindowInfo to frontend DetectedWindow format
-        const detectedWindows: DetectedWindow[] = windowsData.windows.map((win: any, index: number) => ({
+        let detectedWindows: DetectedWindow[] = windowsData.windows.map((win: any, index: number) => ({
           id: String(win.windowHandle || index),
           title: win.title,
           processName: win.processName,
@@ -80,7 +102,20 @@ const WindowListView: React.FC = () => {
           isActive: index === 0,
         }));
 
-        console.log('[WindowListView] Mapped to DetectedWindow format:', detectedWindows.length, 'windows');
+        // Apply filter if set
+        if (windowFilter && windowFilter.trim()) {
+          const keywords = windowFilter.toLowerCase().split(',').map(k => k.trim()).filter(k => k);
+          console.log('[WindowListView] Applying filter keywords:', keywords);
+
+          detectedWindows = detectedWindows.filter(win => {
+            const searchText = `${win.title} ${win.processName}`.toLowerCase();
+            return keywords.some(keyword => searchText.includes(keyword));
+          });
+
+          console.log('[WindowListView] Filtered from', windowsData.windows.length, 'to', detectedWindows.length, 'windows');
+        }
+
+        console.log('[WindowListView] Final window count:', detectedWindows.length);
 
         if (!isMounted) return;
 
@@ -99,12 +134,45 @@ const WindowListView: React.FC = () => {
       }
     };
 
+    // Initial fetch
     fetchWindows();
+
+    // Setup auto-refresh interval if enabled
+    let intervalId: NodeJS.Timeout | null = null;
+    if (autoRefresh && refreshInterval > 0) {
+      console.log(`[WindowListView] Setting up auto-refresh every ${refreshInterval} seconds`);
+      intervalId = setInterval(() => {
+        console.log('[WindowListView] Auto-refresh triggered');
+        fetchWindows();
+      }, refreshInterval * 1000);
+    }
 
     return () => {
       isMounted = false;
+      if (intervalId) {
+        clearInterval(intervalId);
+        console.log('[WindowListView] Auto-refresh interval cleared');
+      }
       console.log('[WindowListView] Component unmounting...');
     };
+  }, [windowFilter, refreshInterval, autoRefresh]);
+
+  /**
+   * Handle activate window button click
+   */
+  const handleActivate = useCallback(async (windowHandle: string) => {
+    try {
+      console.log(`[WindowListView] Activating window ${windowHandle}`);
+      const result = await window.smartPilot?.windows?.activate(Number(windowHandle));
+
+      if (result && result.success) {
+        console.log(`[WindowListView] Successfully activated window ${windowHandle}`);
+      } else {
+        console.error(`[WindowListView] Failed to activate window ${windowHandle}:`, result?.error);
+      }
+    } catch (error) {
+      console.error(`[WindowListView] Error activating window ${windowHandle}:`, error);
+    }
   }, []);
 
   /**
@@ -120,7 +188,7 @@ const WindowListView: React.FC = () => {
           transition={{ duration: 0.1, delay: index * 0.005 }}
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr auto',
+            gridTemplateColumns: '1fr auto auto',
             gap: '12px',
             padding: `${UI_DIMENSIONS.ROW_PADDING}px 12px`,
             height: `${UI_DIMENSIONS.ROW_HEIGHT}px`,
@@ -132,7 +200,6 @@ const WindowListView: React.FC = () => {
             borderLeft: window.isActive
               ? `3px solid ${themeTokens.colors.orange}`
               : '3px solid transparent',
-            cursor: 'pointer',
             transition: 'all 0.15s ease',
           }}
           onMouseEnter={(e) => {
@@ -175,10 +242,37 @@ const WindowListView: React.FC = () => {
           >
             {window.id}
           </div>
+
+          {/* Activate Button Column */}
+          <div
+            role="cell"
+            style={{
+              flexShrink: 0,
+            }}
+          >
+            <Button
+              size="small"
+              appearance="subtle"
+              icon={<ArrowUpload20Regular />}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleActivate(window.id);
+              }}
+              style={{
+                minWidth: '32px',
+                height: '24px',
+                padding: '0 8px',
+                color: themeTokens.colors.orange,
+              }}
+              title="Activeer window"
+            >
+              Activeer
+            </Button>
+          </div>
         </motion.div>
       );
     },
-    []
+    [handleActivate]
   );
 
   // Memoize window count to prevent recalculation
@@ -280,7 +374,7 @@ const WindowListView: React.FC = () => {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1fr auto',
+          gridTemplateColumns: '1fr auto auto',
           gap: '12px',
           padding: '8px 12px',
           background: 'rgba(255, 255, 255, 0.03)',
@@ -295,6 +389,7 @@ const WindowListView: React.FC = () => {
       >
         <div role="columnheader">Window Title</div>
         <div role="columnheader" style={{ textAlign: 'right' }}>Handle</div>
+        <div role="columnheader" style={{ textAlign: 'right', width: '100px' }}>Actie</div>
       </div>
 
       {/* Scrollable table body */}

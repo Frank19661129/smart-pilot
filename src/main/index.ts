@@ -9,6 +9,7 @@ import * as path from 'path';
 import log from 'electron-log';
 import { createLogger } from '../shared/utils/logger';
 import { initializeWindowHandlers, cleanupWindowHandlers } from './ipc/window-handlers';
+import { initializeSettingsHandlers, cleanupSettingsHandlers } from './ipc/settings-handlers';
 import { setupAuthHandlers, cleanupAuthHandlers } from './ipc/auth-handlers';
 import { setupWebSocketHandlers, cleanupWebSocketHandlers } from './ipc/websocket-handlers';
 import { initializeVersionHandlers, cleanupVersionHandlers } from './ipc/version-handlers';
@@ -170,6 +171,9 @@ app.on('ready', () => {
     initializeWindowHandlers();
     log.info('Window handlers initialized');
 
+    initializeSettingsHandlers();
+    log.info('Settings handlers initialized');
+
     setupAuthHandlers();
     log.info('Auth handlers initialized');
 
@@ -222,6 +226,7 @@ app.on('before-quit', () => {
 
   // Cleanup all handlers and services
   cleanupWindowHandlers();
+  cleanupSettingsHandlers();
   cleanupAuthHandlers();
   cleanupWebSocketHandlers();
   cleanupVersionHandlers();

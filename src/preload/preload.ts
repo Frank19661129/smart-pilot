@@ -132,12 +132,25 @@ const smartPilotAPI: SmartPilotAPI = {
     getActive: () => ipcRenderer.invoke('get-active-window'),
     getByProcess: (processName: string) => ipcRenderer.invoke('get-windows-by-process', processName),
     getByClassName: (className: string) => ipcRenderer.invoke('get-windows-by-class', className),
+    activate: (windowHandle: number) => ipcRenderer.invoke('activate-window', windowHandle),
   },
 
   // Session detection
   session: {
     getContext: () => ipcRenderer.invoke('get-session-context'),
     isRemote: () => ipcRenderer.invoke('is-remote-session'),
+  },
+
+  // Settings
+  settings: {
+    getWindowDetection: () => ipcRenderer.invoke('settings-get-window-detection'),
+    setWindowDetection: (settings: any) => ipcRenderer.invoke('settings-set-window-detection', settings),
+    getWindowFilter: () => ipcRenderer.invoke('settings-get-window-filter'),
+    setWindowFilter: (filter: string) => ipcRenderer.invoke('settings-set-window-filter', filter),
+    getRefreshInterval: () => ipcRenderer.invoke('settings-get-refresh-interval'),
+    setRefreshInterval: (interval: number) => ipcRenderer.invoke('settings-set-refresh-interval', interval),
+    getAutoRefresh: () => ipcRenderer.invoke('settings-get-auto-refresh'),
+    setAutoRefresh: (enabled: boolean) => ipcRenderer.invoke('settings-set-auto-refresh', enabled),
   },
 
   // Notifications

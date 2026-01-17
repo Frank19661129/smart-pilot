@@ -79,6 +79,7 @@ export class WindowHandlers {
 
     // Utility handlers
     ipcMain.handle('get-window-details', this.handleGetWindowDetails.bind(this));
+    ipcMain.handle('activate-window', this.handleActivateWindow.bind(this));
 
     this.isInitialized = true;
     console.log('WindowHandlers registered successfully');
@@ -100,6 +101,7 @@ export class WindowHandlers {
     ipcMain.removeHandler('get-session-context');
     ipcMain.removeHandler('is-remote-session');
     ipcMain.removeHandler('get-window-details');
+    ipcMain.removeHandler('activate-window');
 
     this.isInitialized = false;
     console.log('WindowHandlers unregistered');
@@ -299,6 +301,39 @@ export class WindowHandlers {
     } catch (error) {
       console.error('Error in get-window-details:', error);
       return this.createErrorResponse('GET_WINDOW_DETAILS_ERROR', 'Failed to get window details', error);
+    }
+  }
+
+  /**
+   * Handle activate-window request
+   * Brings a window to the foreground
+   */
+  private async handleActivateWindow(
+    event: IpcMainInvokeEvent,
+    windowHandle: number
+  ): Promise<IpcResponse<boolean>> {
+    try {
+      // Validate input
+      if (typeof windowHandle !== 'number') {
+        return this.createErrorResponse('INVALID_INPUT', 'Window handle must be a number');
+      }
+
+      console.log(`IPC: activate-window requested for handle ${windowHandle}`);
+
+      const result = await this.windowDetector.activateWindow(windowHandle);
+
+      if (result.success) {
+        return {
+          success: true,
+          data: true,
+          timestamp: Date.now()
+        };
+      } else {
+        return this.createErrorResponse('ACTIVATE_WINDOW_ERROR', result.error || 'Failed to activate window');
+      }
+    } catch (error) {
+      console.error('Error in activate-window:', error);
+      return this.createErrorResponse('ACTIVATE_WINDOW_ERROR', 'Failed to activate window', error);
     }
   }
 
