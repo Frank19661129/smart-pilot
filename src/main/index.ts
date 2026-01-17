@@ -220,23 +220,48 @@ app.on('activate', () => {
 });
 
 /**
- * Before quit event
+ * Track if app is quitting
  */
-app.on('before-quit', async () => {
-  logger.info('Smart Pilot shutting down...');
+let isQuitting = false;
 
-  // Cleanup all handlers and services
-  cleanupWindowHandlers();
-  cleanupSettingsHandlers();
-  cleanupAuthHandlers();
-  cleanupWebSocketHandlers();
-  cleanupVersionHandlers();
+/**
+ * Before quit event - prevent quit until cleanup is done
+ */
+app.on('before-quit', async (event) => {
+  if (!isQuitting) {
+    event.preventDefault();
+    isQuitting = true;
 
-  // Destroy singleton instances
-  AuthService.destroyInstance();
-  await ContextDetectionService.destroyInstance();
+    logger.info('Smart Pilot shutting down...');
 
-  logger.info('Cleanup complete');
+    // Force quit after 3 seconds regardless of cleanup status
+    const forceQuitTimeout = setTimeout(() => {
+      logger.warn('Force quitting after timeout');
+      process.exit(0);
+    }, 3000);
+
+    try {
+      // Cleanup all handlers and services
+      cleanupWindowHandlers();
+      cleanupSettingsHandlers();
+      cleanupAuthHandlers();
+      cleanupWebSocketHandlers();
+      cleanupVersionHandlers();
+
+      // Destroy singleton instances
+      AuthService.destroyInstance();
+      await ContextDetectionService.destroyInstance();
+
+      logger.info('Cleanup complete');
+    } catch (error) {
+      logger.error('Error during cleanup:', error);
+    }
+
+    clearTimeout(forceQuitTimeout);
+
+    // Quit after cleanup
+    process.exit(0);
+  }
 });
 
 /**

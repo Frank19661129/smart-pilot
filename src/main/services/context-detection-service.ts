@@ -240,7 +240,16 @@ export class ContextDetectionService {
   public async cleanup(): Promise<void> {
     if (this.worker) {
       log.info('[ContextDetectionService] Terminating OCR worker...');
-      await this.worker.terminate();
+      try {
+        // Terminate with timeout to prevent hanging
+        await Promise.race([
+          this.worker.terminate(),
+          new Promise((resolve) => setTimeout(resolve, 2000))
+        ]);
+        log.info('[ContextDetectionService] OCR worker terminated');
+      } catch (error) {
+        log.warn('[ContextDetectionService] Error terminating worker:', error);
+      }
       this.worker = null;
       this.isInitialized = false;
     }
